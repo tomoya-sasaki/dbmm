@@ -1,31 +1,10 @@
-# ❯ checking R code for possible problems ... NOTE
-  # identify_sign: no visible binding for global variable ‘.chain’
-  # identify_sign: no visible binding for global variable ‘variable’
-  # identify_sign: no visible binding for global variable ‘value’
-  # identify_sign: no visible binding for global variable ‘dimension’
-  # identify_sign: no visible binding for global variable ‘est’
-  # identify_sign: no visible binding for global variable ‘flip’
-  # label: no visible binding for global variable ‘name’
-  # label: no visible binding for global variable ‘time’
-  # label: no visible binding for global variable ‘unit’
-  # label: no visible binding for global variable ‘par’
-  # label: no visible binding for global variable ‘TIME’
-  # label: no visible binding for global variable ‘UNIT’
-  # label: no visible binding for global variable ‘value’
-  # label: no visible global function definition for ‘everything’
-  # label: no visible binding for global variable ‘item’
-  # label: no visible binding for global variable ‘ITEM’
-  # label: no visible binding for global variable ‘threshold’
-  # shape: no visible binding for global variable ‘.data’
-  # Undefined global functions or variables:
-  #   .chain .data ITEM TIME UNIT dimension est everything flip item name
-  #   par threshold time unit value variable
-  # Consider adding
-  #   importFrom("graphics", "par")
-  #   importFrom("stats", "time")
-  # to your NAMESPACE file.
-
-
+# when using dynIRTtest::identify
+# Warning message:
+# Returning more (or less) than 1 row per `summarise()` group was deprecated in dplyr 1.1.0.
+# ℹ Please use `reframe()` instead.
+# ℹ When switching from `summarise()` to `reframe()`, remember that `reframe()` always returns an ungrouped data frame and adjust accordingly.
+# ℹ The deprecated feature was likely used in the dynIRTtest package.
+#   Please report the issue to the authors.
 
 
 #' Extract object from a stan output
@@ -95,21 +74,22 @@ identify <- function(raw_draws, rotate = FALSE, varimax = TRUE,
 identify_rotation <- function (raw_draws, varimax,
                                normalize, id_with)
 {
-  # stopifnot(require(posterior))
-  # stopifnot(require(reshape2))
-  # stopifnot(require(seriation))
-  # stopifnot(require(factor.switching))
 
   # TODO: create a function
-  Lb0 <- dplyr::select(raw_draws, dplyr::matches("(^lambda_binary\\[)|(^\\.)")) %>%
+  Lb0 <- dplyr::select(raw_draws,
+                      dplyr::matches("(^lambda_binary\\[)|(^\\.)")) %>%
     as.data.frame()
-  Lo0 <- dplyr::select(raw_draws, dplyr::matches("(^lambda_ordinal\\[)|(^\\.)")) %>%
+  Lo0 <- dplyr::select(raw_draws,
+                      dplyr::matches("(^lambda_ordinal\\[)|(^\\.)")) %>%
     as.data.frame()
-  Lm0 <- dplyr::select(raw_draws, dplyr::matches("(^lambda_metric\\[)|(^\\.)")) %>%
+  Lm0 <- dplyr::select(raw_draws,
+                      dplyr::matches("(^lambda_metric\\[)|(^\\.)")) %>%
     as.data.frame()
-  E0 <- dplyr::select(raw_draws, dplyr::matches("(^eta\\[)|(^\\.)")) %>%
+  E0 <- dplyr::select(raw_draws,
+                      dplyr::matches("(^eta\\[)|(^\\.)")) %>%
     as.data.frame()
-  S0 <- dplyr::select(raw_draws, dplyr::matches("(^sigma_eta_evol\\[)|(^\\.)")) %>%
+  S0 <- dplyr::select(raw_draws,
+                      dplyr::matches("(^sigma_eta_evol\\[)|(^\\.)")) %>%
     as.data.frame()
 
   S <- max(raw_draws$.iteration)
@@ -136,7 +116,8 @@ identify_rotation <- function (raw_draws, varimax,
   lcols_o <- stringr::str_which(names(Lo0), "lambda")
   lcols_m <- stringr::str_which(names(Lm0), "lambda")
   ecols <- stringr::str_which(names(E0), "eta")
-  ecols_t <- stringr::str_split(names(E0)[ecols], "[\\[,\\]]", simplify = TRUE)[, 2]
+  ecols_t <- stringr::str_split(names(E0)[ecols], "[\\[,\\]]",
+                                simplify = TRUE)[, 2]
 
   if (is.null(id_with)) {
     id_with <- c("binary", "ordinal", "metric")[which.max(c(Ib, Io, Im))]
@@ -188,73 +169,13 @@ identify_rotation <- function (raw_draws, varimax,
   sp_out <- vector("list", length = C)
   for (c in 1:C) {
     if (id_with == "binary") {
-      rows <- Lb1$.chain == c
-      Lb1_c <- as.matrix(Lb1[rows, lcols_b])
-      var <- as.integer(
-        stringr::str_replace(colnames(Lb1_c), ".+\\[([0-9]+),([0-9]+)\\]$", "\\1")
-        )
-      dim <- as.integer(
-        stringr::str_replace(colnames(Lb1_c), ".+\\[([0-9]+),([0-9]+)\\]$", "\\2")
-        )
-      colord <- order(var, dim)
-      colnames(Lb1_c) <- stringr::str_replace(
-        colnames(Lb1_c),
-        "lambda_binary\\[([0-9]+),([0-9]+)\\]$",
-        "LambdaV\\1_\\2"
-      )
-      sp_out[[c]] <- factor.switching::rsp_exact(
-        lambda_mcmc = Lb1_c[, colord],
-        rotate = FALSE,
-        maxIter = 100,
-        threshold = 1e-6,
-        verbose = FALSE
-      )
+      sp_out[[c]] <- sign_permute(lambda_item = Lb1, c = c, id_with = "binary")
     }
     else if (id_with == "ordinal") {
-      rows <- Lo1$.chain == c
-      Lo1_c <- as.matrix(Lo1[rows, lcols_o])
-      var <- as.integer(
-        stringr::str_replace(colnames(Lo1_c), ".+\\[([0-9]+),([0-9]+)\\]$", "\\1")
-        )
-      dim <- as.integer(
-        stringr::str_replace(colnames(Lo1_c), ".+\\[([0-9]+),([0-9]+)\\]$", "\\2")
-        )
-      colord <- order(var, dim)
-      colnames(Lo1_c) <- stringr::str_replace(
-        colnames(Lo1_c),
-        "lambda_ordinal\\[([0-9]+),([0-9]+)\\]$",
-        "LambdaV\\1_\\2"
-      )
-      sp_out[[c]] <- factor.switching::rsp_exact(
-        lambda_mcmc = Lo1_c[, colord],
-        rotate = FALSE,
-        maxIter = 100,
-        threshold = 1e-6,
-        verbose = FALSE
-      )
+      sp_out[[c]] <- sign_permute(lambda_item = Lo1, c = c, id_with = "ordinal")
     }
     else if (id_with == "metric") {
-      rows <- Lm1$.chain == c
-      Lm1_c <- as.matrix(Lm1[rows, lcols_m])
-      var <- as.integer(
-        stringr::str_replace(colnames(Lm1_c), ".+\\[([0-9]+),([0-9]+)\\]$", "\\1")
-        )
-      dim <- as.integer(
-        stringr::str_replace(colnames(Lm1_c), ".+\\[([0-9]+),([0-9]+)\\]$", "\\2")
-        )
-      colord <- order(var, dim)
-      colnames(Lm1_c) <- stringr::str_replace(
-        colnames(Lm1_c),
-        "lambda_metric\\[([0-9]+),([0-9]+)\\]$",
-        "LambdaV\\1_\\2"
-      )
-      sp_out[[c]] <- factor.switching::rsp_exact(
-        lambda_mcmc = Lm1_c[, colord],
-        rotate = FALSE,
-        maxIter = 100,
-        threshold = 1e-6,
-        verbose = FALSE
-      )
+      sp_out[[c]] <- sign_permute(lambda_item = Lm1, c = c, id_with = "metric")
     } else {
       stop("Invalid")
     }
@@ -351,7 +272,8 @@ identify_rotation <- function (raw_draws, varimax,
   id_draws[, stringr::str_detect(names(id_draws), "^lambda_metric\\[")] <-
     Lm3[, lcols_m]
   id_draws[, stringr::str_detect(names(id_draws), "^eta\\[")] <- E3[, ecols]
-  id_draws[, stringr::str_detect(names(id_draws), "^sigma_eta_evol\\[")] <- S3[, 1:D]
+  id_draws[, stringr::str_detect(names(id_draws), "^sigma_eta_evol\\[")] <-
+    S3[, 1:D]
   result <- list(
     id_draws = id_draws,
     rotmats = list()
@@ -369,6 +291,58 @@ identify_rotation <- function (raw_draws, varimax,
     }
   }
   return(result)
+}
+
+
+#' @param lambda_item lambda object
+#' @param c column
+#'
+#' @return sign-permuted object
+#'
+sign_permute <- function(lambda_item,
+                        id_with = c("binary", "ordinal", "metric"))
+{
+  rows <- lambda_item$.chain == c
+
+  L_c <- as.matrix(lambda_item[rows, lcols_o])
+
+  var <- as.integer(
+    stringr::str_replace(colnames(L_c),
+                        ".+\\[([0-9]+),([0-9]+)\\]$", "\\1")
+    )
+
+  dim <- as.integer(
+    stringr::str_replace(colnames(L_c),
+                        ".+\\[([0-9]+),([0-9]+)\\]$", "\\2")
+    )
+
+  if (id_with == "binary") {
+    replace_original <- "lambda_binary\\[([0-9]+),([0-9]+)\\]$"
+  } else if (id_with == "ordinal") {
+    replace_original <- "lambda_ordinal\\[([0-9]+),([0-9]+)\\]$"
+  } else if (id_with == "metric") {
+    replace_original <- "lambda_metric\\[([0-9]+),([0-9]+)\\]$"
+  } else {
+    stop("Inavlud `id_with` argument")
+  }
+
+  colord <- order(var, dim)
+  colnames(L_c) <- stringr::str_replace(
+    colnames(L_c),
+    replace_original,
+    "LambdaV\\1_\\2"
+  )
+
+  out <- factor.switching::rsp_exact(
+    lambda_mcmc = L_c[, colord],
+    rotate = FALSE,
+    maxIter = 100,
+    threshold = 1e-6,
+    verbose = FALSE
+  )
+
+  return(out)
+
 }
 
 
@@ -437,13 +411,13 @@ harmonize_varimax <- function (beta_rsp) {
 #' @import magrittr
 #'
 identify_sign <- function (raw_draws, sign) {
-  # stopifnot(require(posterior))
   raw_draws_df <- posterior::as_draws_df(raw_draws)
 
   long_draws <- suppressWarnings(
     raw_draws_df %>%
       dplyr::select(dplyr::matches("^\\.|^lambda")) %>%
-      tidyr::pivot_longer(cols = -dplyr::matches("^\\."), names_to = "variable") %>%
+      tidyr::pivot_longer(cols = -dplyr::matches("^\\."),
+                          names_to = "variable") %>%
       dplyr::group_by(.data$.chain, .data$variable) %>%
       dplyr::summarise(est = mean.default(.data$value), .groups = "drop") %>%
       tidyr::separate(
@@ -462,7 +436,8 @@ identify_sign <- function (raw_draws, sign) {
 
   chain_flips <- long_draws %>%
     dplyr::group_by(.data$.chain, .data$dimension) %>%
-    dplyr::summarise(flip = (sign * mean.default(.data$est)) < 0, .groups = "drop") %>%
+    dplyr::summarise(flip = (sign * mean.default(.data$est)) < 0,
+                    .groups = "drop") %>%
     dplyr::select(".chain", "dimension", "flip")
 
   identified_draws <- raw_draws_df
@@ -517,6 +492,7 @@ label <- function (draws, regex_pars = NULL)
     regex_pars_p <- regex_pars[p]
 
     if (!any(stringr::str_detect(names(draws_df), regex_pars_p))) next
+
     draws_ls[[p]] <-
       draws_df %>%
       as.data.frame() %>%
@@ -526,14 +502,20 @@ label <- function (draws, regex_pars = NULL)
         names_to = "name",
         values_to = "value"
       )
+
+    draws_ls_p <- draws_ls[[p]] %>% as.data.frame()
+
     if (regex_pars_p == "^eta\\[") {
-      draws_ls[[p]] <- draws_ls[[p]] %>%
-        as.data.frame() %>%
+      draws_ls[[p]] <- draws_ls_p %>%
         dplyr::mutate(
-          par = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 1],
-          time = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 2],
-          unit = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 3],
-          dim = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 4],
+          par = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 1],
+          time = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 2],
+          unit = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 3],
+          dim = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 4],
           dplyr::across(.data$time:.data$dim, as.integer),
           TIME = factor(.data$time, labels = attr(draws, "time_labels")),
           UNIT = factor(.data$unit, labels = attr(draws, "unit_labels"))
@@ -541,22 +523,25 @@ label <- function (draws, regex_pars = NULL)
         dplyr::select("par", "TIME", "UNIT", "dim", "value", dplyr::everything())
     }
     if (regex_pars_p == "sigma_eta_evol\\[") {
-      draws_ls[[p]] <- draws_ls[[p]] %>%
-        as.data.frame() %>%
+      draws_ls[[p]] <- draws_ls_p %>%
         dplyr::mutate(
-          par = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 1],
-          dim = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 2],
+          par = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 1],
+          dim = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 2],
           dplyr::across(.data$dim, as.integer),
         ) %>%
         dplyr::select("par", "dim", "value", dplyr::everything())
     }
     if (regex_pars_p == "^lambda_binary\\[") {
-      draws_ls[[p]] <- draws_ls[[p]] %>%
-        as.data.frame() %>%
+      draws_ls[[p]] <- draws_ls_p %>%
         dplyr::mutate(
-          par = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 1],
-          item = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 2],
-          dim = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 3],
+          par = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 1],
+          item = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 2],
+          dim = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 3],
           dplyr::across(.data$item:.data$dim, as.integer),
           ITEM = factor(
             x = .data$item,
@@ -566,12 +551,14 @@ label <- function (draws, regex_pars = NULL)
         dplyr::select("par", "ITEM", "dim", "value", dplyr::everything())
     }
     if (regex_pars_p == "^lambda_metric\\[") {
-      draws_ls[[p]] <- draws_ls[[p]] %>%
-        as.data.frame() %>%
+      draws_ls[[p]] <- draws_ls_p %>%
         dplyr::mutate(
-          par = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 1],
-          item = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 2],
-          dim = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 3],
+          par = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 1],
+          item = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 2],
+          dim = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 3],
           dplyr::across(.data$item:.data$dim, as.integer),
           ITEM = factor(
             x = .data$item,
@@ -581,11 +568,12 @@ label <- function (draws, regex_pars = NULL)
         dplyr::select("par", "ITEM", "dim", "value", dplyr::everything())
     }
     if (regex_pars_p == "^sigma_metric\\[") {
-      draws_ls[[p]] <- draws_ls[[p]] %>%
-        as.data.frame() %>%
+      draws_ls[[p]] <- draws_ls_p %>%
         dplyr::mutate(
-          par = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 1],
-          item = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 2],
+          par = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 1],
+          item = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 2],
           dplyr::across(.data$item, as.integer),
           ITEM = factor(
             x = .data$item,
@@ -595,12 +583,14 @@ label <- function (draws, regex_pars = NULL)
         dplyr::select("par", "ITEM", "value", dplyr::everything())
     }
     if (regex_pars_p == "^alpha_metric\\[") {
-      draws_ls[[p]] <- draws_ls[[p]] %>%
-        as.data.frame() %>%
+      draws_ls[[p]] <- draws_ls_p %>%
         dplyr::mutate(
-          par = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 1],
-          time = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 2],
-          item = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 3],
+          par = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 1],
+          time = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 2],
+          item = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 3],
           dplyr::across(.data$time:.data$item, as.integer),
           TIME = factor(.data$time, labels = attr(draws, "time_labels")),
           ITEM = factor(
@@ -611,12 +601,14 @@ label <- function (draws, regex_pars = NULL)
         dplyr::select("par", "TIME", "ITEM", "value", dplyr::everything())
     }
     if (regex_pars_p == "^alpha_binary\\[") {
-      draws_ls[[p]] <- draws_ls[[p]] %>%
-        as.data.frame() %>%
+      draws_ls[[p]] <- draws_ls_p %>%
         dplyr::mutate(
-          par = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 1],
-          time = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 2],
-          item = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 3],
+          par = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 1],
+          time = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 2],
+          item = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 3],
           dplyr::across(.data$time:.data$item, as.integer),
           TIME = factor(.data$time, labels = attr(draws, "time_labels")),
           ITEM = factor(
@@ -627,12 +619,14 @@ label <- function (draws, regex_pars = NULL)
         dplyr::select("par", "TIME", "ITEM", "value", dplyr::everything())
     }
     if (regex_pars_p == "^lambda_ordinal\\[") {
-      draws_ls[[p]] <- draws_ls[[p]] %>%
-        as.data.frame() %>%
+      draws_ls[[p]] <- draws_ls_p %>%
         dplyr::mutate(
-          par = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 1],
-          item = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 2],
-          dim = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 3],
+          par = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 1],
+          item = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 2],
+          dim = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 3],
           dplyr::across(.data$item:.data$dim, as.integer),
           ITEM = factor(
             x = .data$item,
@@ -642,13 +636,15 @@ label <- function (draws, regex_pars = NULL)
         dplyr::select("par", "ITEM", "dim", "value", dplyr::everything())
     }
     if (regex_pars_p == "^kappa\\[") {
-      draws_ls[[p]] <- draws_ls[[p]] %>%
-        as.data.frame() %>%
+      draws_ls[[p]] <- draws_ls_p %>%
         dplyr::mutate(
-          par = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 1],
-          item = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 2],
+          par = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 1],
+          item = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 2],
           threshold =
-            stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 3],
+            stringr::str_split(.data$name,
+                                    "[\\[,\\]]", simplify = TRUE)[, 3],
           dplyr::across(.data$threshold, as.integer),
           ITEM = factor(
             x = .data$item,
@@ -658,12 +654,14 @@ label <- function (draws, regex_pars = NULL)
         dplyr::select("par", "ITEM", "threshold", "value", dplyr::everything())
     }
     if (regex_pars_p == "^alpha_ordinal\\[") {
-      draws_ls[[p]] <- draws_ls[[p]] %>%
-        as.data.frame() %>%
+      draws_ls[[p]] <- draws_ls_p %>%
         dplyr::mutate(
-          par = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 1],
-          time = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 2],
-          item = stringr::str_split(.data$name, "[\\[,\\]]", simplify = TRUE)[, 3],
+          par = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 1],
+          time = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 2],
+          item = stringr::str_split(.data$name,
+                                  "[\\[,\\]]", simplify = TRUE)[, 3],
           dplyr::across(.data$time:.data$item, as.integer),
           TIME = factor(.data$time, labels = attr(draws, "time_labels")),
           ITEM = factor(
@@ -674,12 +672,12 @@ label <- function (draws, regex_pars = NULL)
         dplyr::select("par", "TIME", "ITEM", "value", dplyr::everything())
     }
     if (regex_pars_p == "^sigma_alpha_evol") {
-      draws_ls[[p]] <- draws_ls[[p]] %>%
-        as.data.frame() %>%
+      draws_ls[[p]] <- draws_ls_p %>%
         dplyr::rename(par = "name") %>%
         dplyr::select("par", "value", dplyr::everything())
     }
   }
+
   attr(draws_ls, "unit_labels") <- attr(draws, "unit_labels")
   attr(draws_ls, "time_labels") <- attr(draws, "time_labels")
   attr(draws_ls, "binary_item_labels") <- attr(draws, "binary_item_labels")
