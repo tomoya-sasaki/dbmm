@@ -32,11 +32,11 @@ check_item_labels <- function(outcomes_labeled_item, item_labels) {
 #' @importFrom rlang .data
 #' @export
 plot_intercept_test <- function(outcomes_labeled,
-                          xtitle = NULL,
-                          ytitle = "Estimated Intercept",
-                          maintitle = NULL,
-                          item_type = c("metric", "binary", "ordinal"),
-                          item_labels = NULL) {
+                                xtitle = NULL,
+                                ytitle = "Estimated Intercept",
+                                maintitle = NULL,
+                                item_type = c("metric", "binary", "ordinal"),
+                                item_labels = NULL) {
 
 
   if (item_type == "metric") {
@@ -73,8 +73,8 @@ plot_intercept_test <- function(outcomes_labeled,
       facet_wrap(~.data$ITEM) +
       geom_line() +
       geom_ribbon(
-        aes(ymin = .data$est - 1.96 * .data$err,
-            ymax = .data$est + 1.96 * .data$err),
+        aes(ymin = .data$est - qnorm(0.975) * .data$err,
+            ymax = .data$est + qnorm(0.975) * .data$err),
             color = NA, alpha = 1/4
       ) +
       labs(
@@ -136,8 +136,8 @@ plot_intercept <- function(outcomes_labeled,
       facet_wrap(~.data$ITEM) +
       geom_line() +
       geom_ribbon(
-        aes(ymin = .data$est - 1.96 * .data$err,
-            ymax = .data$est + 1.96 * .data$err),
+        aes(ymin = .data$est - qnorm(0.975) * .data$err,
+            ymax = .data$est + qnorm(0.975) * .data$err),
             color = NA, alpha = 1/4
       ) +
       labs(
@@ -192,13 +192,13 @@ plot_loadings <- function(outcomes_labeled,
       geom_hline(yintercept = 0, linetype = "dotted") +
       geom_point() +
       geom_linerange(
-        aes(xmin = .data$est_1 - 1.96 * .data$err_1,
-            xmax = .data$est_1 + 1.96 * .data$err_1),
+        aes(xmin = .data$est_1 - qnorm(0.975) * .data$err_1,
+            xmax = .data$est_1 + qnorm(0.975) * .data$err_1),
             alpha = 1/4, linewidth = 2
       ) +
       geom_linerange(
-        aes(ymin = .data$est_2 - 1.96 * .data$err_2,
-            ymax = .data$est_2 + 1.96 * .data$err_2),
+        aes(ymin = .data$est_2 - qnorm(0.975) * .data$err_2,
+            ymax = .data$est_2 + qnorm(0.975) * .data$err_2),
             alpha = 1/4, linewidth = 2
       ) +
       ggrepel::geom_text_repel() +
@@ -265,13 +265,13 @@ plot_scores_ave <- function(outcomes_labeled,
       geom_hline(yintercept = 0, linetype = "dotted") +
       geom_vline(xintercept = 0, linetype = "dotted") +
       geom_linerange(
-        aes(xmin = .data$est_1 - 1.96 * .data$err_1,
-            xmax = .data$est_1 + 1.96 * .data$err_1),
+        aes(xmin = .data$est_1 - qnorm(0.975) * .data$err_1,
+            xmax = .data$est_1 + qnorm(0.975) * .data$err_1),
         alpha = 1/4, linewidth = 2
       ) +
       geom_linerange(
-        aes(ymin = .data$est_2 - 1.96 * .data$err_2,
-            ymax = .data$est_2 + 1.96 * .data$err_2),
+        aes(ymin = .data$est_2 - qnorm(0.975) * .data$err_2,
+            ymax = .data$est_2 + qnorm(0.975) * .data$err_2),
         alpha = 1/4, linewidth = 2
       ) +
       geom_point() +
@@ -331,8 +331,8 @@ plot_scores_timetrend <- function(outcomes_labeled,
       aes(x = .data$year, y = .data$est,
           color = .data$DIMENSION, fill = .data$DIMENSION) +
       geom_ribbon(
-        aes(ymin = .data$est - 1.96 * .data$err,
-            ymax = .data$est + 1.96 * .data$err),
+        aes(ymin = .data$est - qnorm(0.975) * .data$err,
+            ymax = .data$est + qnorm(0.975) * .data$err),
         color = NA, alpha = 1/4
       ) +
       geom_line() +
